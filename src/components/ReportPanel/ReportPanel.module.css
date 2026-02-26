@@ -1,0 +1,167 @@
+/* ReportPanel.module.css */
+
+.panel {
+  background: #111b2d;
+  border: 1px solid #1e3050;
+  border-radius: 6px;
+  padding: 14px 16px;
+  font-size: 12px;
+  color: #c8d4e8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1e3050;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0ecff;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.domain {
+  font-size: 10px;
+  color: #56b6c2;
+  background: rgba(86, 182, 194, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ts {
+  font-size: 10px;
+  color: #4a6080;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Severity badge ──────────────────────────────────── */
+
+.badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.badge_low      { background: rgba(78, 205, 196, 0.15); color: #4ecdc4; }
+.badge_medium   { background: rgba(255, 221, 87, 0.15);  color: #ffdd57; }
+.badge_high     { background: rgba(255, 152, 0, 0.15);   color: #ff9800; }
+.badge_critical { background: rgba(255, 82, 82, 0.18);   color: #ff5252; }
+
+/* ── Sections ────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sectionLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a6080;
+}
+
+.summary {
+  margin: 0;
+  color: #a8bed8;
+  line-height: 1.55;
+}
+
+/* ── Findings table ──────────────────────────────────── */
+
+.findings {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.findingRow {
+  border-bottom: 1px solid #151f30;
+}
+
+.findingRow:last-child {
+  border-bottom: none;
+}
+
+.findingLabel {
+  padding: 5px 8px 5px 0;
+  color: #6a84a4;
+  font-size: 11px;
+  white-space: nowrap;
+  width: 38%;
+}
+
+.findingValue {
+  padding: 5px 8px;
+  color: #c8d4e8;
+  font-size: 11px;
+  width: 58%;
+}
+
+.findingStatus {
+  padding: 5px 0;
+  text-align: right;
+  width: 4%;
+}
+
+/* ── Status dots ─────────────────────────────────────── */
+
+.statusDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dot_ok    { background: #4ecdc4; }
+.dot_warn  { background: #ffdd57; }
+.dot_error { background: #ff5252; }
+.dot_info  { background: #56b6c2; }
+
+/* ── Impact scope list ───────────────────────────────── */
+
+.list {
+  margin: 0;
+  padding: 0 0 0 14px;
+  color: #a0b4cc;
+  line-height: 1.7;
+  font-size: 11px;
+}
+
+/* ── Recommended actions ─────────────────────────────── */
+
+.actionList {
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: #a0b4cc;
+  line-height: 1.8;
+  font-size: 11px;
+}
+
+.actionList li {
+  padding-left: 2px;
+}

@@ -1,0 +1,108 @@
+/* ─────────────────────────────────────────────────────
+ *  AICoreAnimation — Bezier spline canvas styles
+ *
+ *  The animation itself is handled by requestAnimationFrame
+ *  in the TSX. CSS only controls the ambient backdrop and
+ *  label/dot per state.
+ * ───────────────────────────────────────────────────── */
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #060d1b;
+  border-radius: 8px;
+  transition: background 0.6s ease;
+}
+
+/* ── Ambient backdrop glow ──────────────────────────── */
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 65% at 50% 50%, rgba(13,148,136,0.07) 0%, transparent 70%);
+  opacity: 0.7;
+  transition: background 0.6s ease, opacity 0.6s ease;
+}
+
+.idle .ambient {
+  background: radial-gradient(ellipse 70% 65% at 50% 50%, rgba(13,148,136,0.07) 0%, transparent 70%);
+  opacity: 0.7;
+}
+.planning .ambient {
+  background: radial-gradient(ellipse 72% 65% at 50% 50%, rgba(14,165,233,0.14) 0%, transparent 70%);
+  opacity: 0.9;
+}
+.executing .ambient {
+  background: radial-gradient(ellipse 75% 65% at 50% 50%, rgba(13,148,136,0.22) 0%, transparent 68%);
+  opacity: 1;
+}
+.synthesizing .ambient {
+  background: radial-gradient(ellipse 65% 60% at 50% 50%, rgba(99,102,241,0.25) 0%, transparent 65%);
+  opacity: 1;
+}
+.complete .ambient {
+  background: radial-gradient(ellipse 70% 65% at 50% 50%, rgba(13,148,136,0.05) 0%, transparent 70%);
+  opacity: 0.4;
+  transition: background 1.5s ease, opacity 1.5s ease;
+}
+.error .ambient {
+  background: radial-gradient(ellipse 70% 65% at 50% 50%, rgba(239,68,68,0.18) 0%, transparent 68%);
+  opacity: 0.9;
+}
+
+/* ── SVG canvas ─────────────────────────────────────────── */
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Label ─────────────────────────────────────────────── */
+
+.label {
+  position: absolute;
+  bottom: 14px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #334155;
+  transition: color 0.4s ease;
+}
+
+.idle .label        { color: #334155; }
+.planning .label    { color: #64748b; }
+.executing .label   { color: #94a3b8; }
+.synthesizing .label{ color: #94a3b8; }
+.complete .label    { color: #334155; transition: color 1.5s ease; }
+.error .label       { color: #f87171; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1e3a4a;
+  animation: dotBlink 3s ease-in-out infinite;
+  transition: background 0.4s ease;
+}
+
+.idle .dot        { background: #164e41;  animation-duration: 4s; }
+.planning .dot    { background: #0369a1;  animation-duration: 1.2s; }
+.executing .dot   { background: #ca8a04;  animation-duration: 0.4s; }
+.synthesizing .dot{ background: #7c3aed;  animation-duration: 0.35s; }
+.complete .dot    { background: #164e41;  animation-duration: 5s; }
+.error .dot       { background: #dc2626;  animation-duration: 0.7s; }
+
+@keyframes dotBlink {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}

@@ -1,0 +1,197 @@
+/* ─────────────────────────────────────────────────────
+ *  Chat — conversation panel styles
+ *  Primary focus column (45 % of layout)
+ * ───────────────────────────────────────────────────── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0f1829;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+
+.header {
+  padding: 14px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: #64748b;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b transparent;
+}
+
+.empty {
+  color: #334155;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 60px;
+  line-height: 1.6;
+}
+
+/* ── Bubbles ─────────────────────────────────────────── */
+
+.bubble {
+  max-width: 88%;
+  padding: 13px 17px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  animation: fadeUp 0.2s ease forwards;
+}
+
+.user {
+  align-self: flex-end;
+  background: #0c3147;
+  color: #bae6fd;
+  border: 1px solid rgba(14,165,233,0.15);
+  border-bottom-right-radius: 3px;
+}
+
+.assistant {
+  align-self: flex-start;
+  background: #121f30;
+  color: #e2e8f0;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-bottom-left-radius: 3px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+
+/* Executive summary — last assistant message treatment */
+.assistant:last-of-type {
+  background: #0f1f32;
+  border: 1px solid rgba(13,148,136,0.22);
+  box-shadow: 0 0 0 1px rgba(13,148,136,0.08), 0 4px 24px rgba(0,0,0,0.35);
+}
+
+.system {
+  align-self: flex-start;
+  max-width: 100%;
+  background: transparent;
+  border-left: 2px solid #1e3a4a;
+  color: #475569;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  font-style: italic;
+  border-radius: 0;
+  margin: 2px 0;
+}
+
+/* ── Role label ──────────────────────────────────────── */
+
+.role {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-bottom: 5px;
+}
+
+.user    .role { color: #38bdf8; }
+.assistant .role { color: #0d9488; }
+.system  .role { display: none; }
+
+.content {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* separator between reasoning steps */
+.stepDivider {
+  width: 32px;
+  height: 1px;
+  background: #1e3a4a;
+  margin: 10px 0;
+  align-self: flex-start;
+  margin-left: 4px;
+}
+
+/* ── Input bar ─────────────────────────────────────────── */
+
+.inputBar {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  background: #090f1c;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.input:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+}
+
+.input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: #334155;
+}
+
+.send {
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  background: #0d9488;
+  color: #f0fdfa;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.send:hover:not(:disabled) {
+  background: #0f766e;
+  box-shadow: 0 0 12px rgba(13,148,136,0.35);
+}
+
+.send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Animations ────────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Report panel wrapper ──────────────────────────────── */
+
+.reportWrapper {
+  margin-top: 4px;
+  animation: fadeUp 0.3s ease;
+}

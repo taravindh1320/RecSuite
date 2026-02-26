@@ -1,0 +1,45 @@
+/* ─────────────────────────────────────────────────────
+ *  Dashboard layout
+ *
+ *  ┌──────────────────┬──────────────┬──────────┐
+ *  │  Chat  45 %      │ Timeline 35% │ Log 20 % │  72 %
+ *  └──────────────────┴──────────────┴──────────┘
+ *  ┌────────────────────────────────────────────┐
+ *  │  AI Core Animation                         │  28 %
+ *  └────────────────────────────────────────────┘
+ * ───────────────────────────────────────────────────── */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: #0b1120;
+}
+
+/* ── Main content row ──────────────────────────────────── */
+
+.top {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 45fr 35fr 20fr;
+  gap: 10px;
+  padding: 14px 14px 6px;
+  min-height: 0;
+}
+
+.chat,
+.graph,
+.log {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── AI Core panel ─────────────────────────────────────── */
+
+.bottom {
+  flex: 0 0 220px;
+  padding: 0 14px 14px;
+  min-height: 0;
+}
