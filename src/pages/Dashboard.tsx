@@ -6,7 +6,6 @@
 
 import { useState, useCallback } from 'react';
 import type {
-  AgentNode,
   ToolCall,
   ReportData,
 } from '@/types/agent';
@@ -29,11 +28,11 @@ const feId = () => `fe-${Date.now()}-${++_feSeq}`;
 export default function Dashboard() {
   const [command,       setCommand]       = useState('');
   const [feedEntries,   setFeedEntries]   = useState<FeedEntry[]>([]);
-  const [nodes,         setNodes]         = useState<AgentNode[]>([]);
-  const [toolCalls,     setToolCalls]     = useState<ToolCall[]>([]);
-  const [executionState, setExecutionState] = useState<ExecutionState>('idle');
-  const [agentsToInvoke, setAgentsToInvoke] = useState<string[]>([]);
-  const [reportData,    setReportData]    = useState<ReportData | null>(null);
+  const [toolCalls,       setToolCalls]       = useState<ToolCall[]>([]);
+  const [executionState,  setExecutionState]  = useState<ExecutionState>('idle');
+  const [agentsToInvoke,  setAgentsToInvoke]  = useState<string[]>([]);
+  const [activeAgentId,   setActiveAgentId]   = useState<string>('');
+  const [reportData,      setReportData]      = useState<ReportData | null>(null);
 
   const isProcessing = executionState !== 'idle'
     && executionState !== 'complete'
@@ -47,9 +46,9 @@ export default function Dashboard() {
     /* 1. Reset panels, capture command */
     setCommand(text);
     setFeedEntries([]);
-    setNodes([]);
     setToolCalls([]);
     setReportData(null);
+    setActiveAgentId('');
     setExecutionState('idle');
 
     try {
@@ -62,17 +61,19 @@ export default function Dashboard() {
           pushEntry('planning', 'Decomposing intent…');
         },
 
-        onAgentStart(displayName) {
+        onAgentStart(displayName, agentId) {
           setExecutionState('executing');
+          setActiveAgentId(agentId);
           pushEntry('agent', `Delegating to ${displayName}`);
         },
 
-        onAgentComplete(_displayName, response, node) {
-          setNodes(prev => [...prev, node]);
+        onAgentComplete(_displayName, response) {
+          setActiveAgentId('');
           setToolCalls(prev => [...prev, ...response.toolCalls]);
         },
 
         onSynthesis() {
+          setActiveAgentId('');
           setExecutionState('synthesizing');
           pushEntry('synthesis', 'Converging findings…');
         },
@@ -120,9 +121,9 @@ export default function Dashboard() {
         {/* Right 70 %: Orchestration Brain */}
         <div className={styles.brain}>
           <AgentFlowCanvas
-            state={executionState}
-            nodes={nodes}
-            agentsToInvoke={agentsToInvoke}
+            executionState={executionState}
+            invokedAgents={agentsToInvoke}
+            activeAgent={activeAgentId}
           />
         </div>
 

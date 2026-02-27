@@ -232,7 +232,7 @@ export interface ControlCycleCallbacks {
   /** Entering planning phase; receives resolved intent profile */
   onPlanning?: (profile: IntentProfile) => void;
   /** A specific agent is about to start */
-  onAgentStart?: (displayName: string) => void;
+  onAgentStart?: (displayName: string, agentId: string) => void;
   /** An agent has completed execution */
   onAgentComplete?: (displayName: string, response: AgentResponse, node: AgentNode) => void;
   /** All agents done; synthesizing final output */
@@ -273,7 +273,7 @@ export async function runControlCycle(
 
     const result = await fn(userInput, profile);
 
-    callbacks?.onAgentStart?.(result.displayName);
+    callbacks?.onAgentStart?.(result.displayName, result.agentId);
     await delay(800);
 
     const node: AgentNode = {

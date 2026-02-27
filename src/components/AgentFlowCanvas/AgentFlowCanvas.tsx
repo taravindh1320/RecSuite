@@ -1,4 +1,4 @@
-ï»¿/* 
+/* 
  *  AgentFlowCanvas  Kinetic orchestration brain
  *
  *  Layout (ViewBox 0 0 660 420):
@@ -7,21 +7,25 @@
  *     large circle     [Agent B      ]    [SYNTHESIS]
  *                      [Agent C      ]        large circle
  *
- *  Multi-dot system: concurrent pulses travel simultaneously.
- *  State drives node glow, ring animations, aura brightness.
- *  */
+ *  Dynamic: nodes rendered exclusively from invokedAgents prop.
+ *  No hardcoded agent list. activeAgent drives live delegation
+ *  pulses; statuses derived purely from prop state.
+ */
 
 import { useEffect, useRef, useState } from 'react';
-import type { AgentNode } from '@/types/agent';
 import type { ExecutionState } from '@/types/execution';
 import BrainAura from '@/components/BrainAura';
 import styles from './AgentFlowCanvas.module.css';
 
+/* -- Props -------------------------------------------------- */
+
 interface AgentFlowCanvasProps {
-  state:           ExecutionState;
-  nodes:           AgentNode[];
-  agentsToInvoke?: string[];
+  executionState: ExecutionState;
+  invokedAgents:  string[];       // agentIds from IntentProfile
+  activeAgent?:   string;         // agentId currently executing
 }
+
+/* -- Constants ---------------------------------------------- */
 
 const ORC_CX   = 165;
 const ORC_CY   = 210;
@@ -32,39 +36,56 @@ const SYN_R    = 44;
 const AGENT_CX = 400;
 const AGENT_W  = 144;
 const AGENT_H  = 40;
+const MAX_AGENTS = 4;
 const VIEWBOX  = '0 0 660 420';
 
-const AGENT_META: Record<string, string[]> = {
-  recSignalAgent: ['MONITORING',  'AGENT'],
-  recTraceAgent:  ['DEPENDENCY',  'INTELLIGENCE'],
-  recCheckAgent:  ['RELEASE',     'VALIDATION'],
+/* -- Agent display metadata ---------------------------------- */
+
+const AGENT_META: Record<string, [string, string]> = {
+  recSignalAgent:  ['MONITORING',    'AGENT'],
+  recTraceAgent:   ['DEPENDENCY',    'INTELLIGENCE'],
+  recCheckAgent:   ['RELEASE',       'VALIDATION'],
+  recServerAgent:  ['SERVER HEALTH', 'AGENT'],
 };
 
-const DEFAULT_AGENTS = ['recSignalAgent', 'recTraceAgent', 'recCheckAgent'];
+/** Fallback label pair for unregistered agents */
+function agentLines(id: string): [string, string] {
+  if (AGENT_META[id]) return AGENT_META[id];
+  const base = id.replace(/^rec/, '').replace(/Agent$/, '').replace(/([A-Z])/g, ' $1').trim().toUpperCase();
+  return [base, 'AGENT'];
+}
 
-function agentIdToKey(id: string): string { return id.replace(/^rec/, '').toLowerCase(); }
+/** Internal key: strip rec prefix, lowercase */
+function agentKey(id: string): string { return id.replace(/^rec/, '').toLowerCase(); }
+
+/* -- Layout builder ------------------------------------------- */
 
 function agentYPositions(count: number): number[] {
   if (count === 1) return [210];
   if (count === 2) return [150, 270];
-  return [90, 210, 330];
+  if (count === 3) return [90, 210, 330];
+  return [70, 160, 260, 350];
 }
 
-interface NodeDef { id: string; lines: string[]; cx: number; cy: number; kind: 'hub' | 'agent'; r?: number; w?: number; h?: number; }
+interface NodeDef { id: string; lines: [string, string]; cx: number; cy: number; kind: 'hub' | 'agent'; r?: number; w?: number; h?: number; }
 interface Layout   { nodeDefs: NodeDef[]; edgePaths: Record<string, string>; }
 
 function buildLayout(agentIds: string[]): Layout {
-  const capped = agentIds.slice(0, 3);
-  const ys     = agentYPositions(capped.length);
+  const capped     = agentIds.slice(0, MAX_AGENTS);
+  const ys         = agentYPositions(capped.length);
   const nodeDefs: NodeDef[] = [
     { id: 'orchestrator', kind: 'hub', lines: ['ORCHESTRATOR', 'CONTROL PLANE'], cx: ORC_CX, cy: ORC_CY, r: ORC_R },
   ];
   const edgePaths: Record<string, string> = {};
-  const orcRight = ORC_CX + ORC_R; const agentLeft = AGENT_CX - AGENT_W / 2;
-  const agentRight = AGENT_CX + AGENT_W / 2; const synLeft = SYN_CX - SYN_R;
+  const orcRight  = ORC_CX + ORC_R;
+  const agentLeft = AGENT_CX - AGENT_W / 2;
+  const agentRight = AGENT_CX + AGENT_W / 2;
+  const synLeft   = SYN_CX - SYN_R;
+
   capped.forEach((id, i) => {
-    const key = agentIdToKey(id); const cy = ys[i];
-    nodeDefs.push({ id: key, kind: 'agent', lines: AGENT_META[id] ?? [id.replace(/^rec/, '').toUpperCase()], cx: AGENT_CX, cy, w: AGENT_W, h: AGENT_H });
+    const key = agentKey(id);
+    const cy  = ys[i];
+    nodeDefs.push({ id: key, kind: 'agent', lines: agentLines(id), cx: AGENT_CX, cy, w: AGENT_W, h: AGENT_H });
     edgePaths[`orc-${key}`]       = `M ${orcRight} ${ORC_CY} C ${orcRight + 70} ${ORC_CY} ${agentLeft - 50} ${cy} ${agentLeft} ${cy}`;
     edgePaths[`${key}-orc`]       = `M ${agentLeft} ${cy} C ${agentLeft - 50} ${cy} ${orcRight + 70} ${ORC_CY} ${orcRight} ${ORC_CY}`;
     edgePaths[`${key}-synthesis`] = `M ${agentRight} ${cy} C ${agentRight + 50} ${cy} ${synLeft - 50} ${SYN_CY} ${synLeft} ${SYN_CY}`;
@@ -73,36 +94,68 @@ function buildLayout(agentIds: string[]): Layout {
   return { nodeDefs, edgePaths };
 }
 
-function matchAgent(label: string, nodeIds: string[]): string {
-  const l = label.toLowerCase();
-  if (l.includes('monitor') || l.includes('signal')) return nodeIds.find(id => id.startsWith('signal')) ?? '';
-  if (l.includes('depend')  || l.includes('trace')  || l.includes('intelligence')) return nodeIds.find(id => id.startsWith('trace')) ?? '';
-  if (l.includes('release') || l.includes('valid')  || l.includes('check')) return nodeIds.find(id => id.startsWith('check')) ?? '';
-  return '';
-}
+/* -- Status derivation --------------------------------------- */
 
 type NodeStatus   = 'idle' | 'active' | 'complete' | 'error';
 type NodeStatuses = Record<string, NodeStatus>;
 
-function deriveStatuses(state: ExecutionState, nodes: AgentNode[], agentNodeIds: string[]): NodeStatuses {
+/**
+ * Pure derivation — no AgentNode array needed.
+ * Status is computed from invokedAgents order + activeAgent + executionState.
+ *
+ * Agents before activeAgent in the list  ? complete
+ * activeAgent                            ? active (or error on state=error)
+ * Agents after activeAgent               ? idle
+ * When synthesizing/complete             ? all agents complete
+ */
+function deriveStatuses(
+  executionState: ExecutionState,
+  agentNodeIds: string[],
+  activeAgentKey: string,
+): NodeStatuses {
   const s: NodeStatuses = { orchestrator: 'idle', synthesis: 'idle' };
   for (const id of agentNodeIds) s[id] = 'idle';
-  if (state === 'idle') return s;
-  if (state === 'planning') { s.orchestrator = 'active'; return s; }
-  s.orchestrator = 'complete';
-  for (const n of nodes) { const id = matchAgent(n.label, agentNodeIds); if (id) s[id] = n.status === 'error' ? 'error' : 'complete'; }
-  if (state === 'executing') {
-    const done = agentNodeIds.filter(id => s[id] !== 'idle');
-    const next = agentNodeIds[done.length];
-    if (next) s[next] = 'active';
+
+  if (executionState === 'idle') return s;
+
+  if (executionState === 'planning') {
+    s.orchestrator = 'active';
+    return s;
   }
-  if (state === 'synthesizing') s.synthesis = 'active';
-  if (state === 'complete')     s.synthesis = 'complete';
-  if (state === 'error') { const first = agentNodeIds.find(id => s[id] === 'idle'); if (first) s[first] = 'error'; else s.synthesis = 'error'; }
+
+  s.orchestrator = 'complete';
+
+  const isTerminal = executionState === 'synthesizing' || executionState === 'complete';
+  const activeIdx  = activeAgentKey ? agentNodeIds.indexOf(activeAgentKey) : -1;
+
+  for (let i = 0; i < agentNodeIds.length; i++) {
+    const id = agentNodeIds[i];
+    if (isTerminal) {
+      s[id] = 'complete';
+    } else if (activeIdx === -1) {
+      // executing but no active agent yet (between agents)
+      s[id] = 'idle';
+    } else if (i < activeIdx) {
+      s[id] = 'complete';
+    } else if (i === activeIdx) {
+      s[id] = executionState === 'error' ? 'error' : 'active';
+    }
+    // i > activeIdx ? stays idle
+  }
+
+  if (executionState === 'synthesizing') s.synthesis = 'active';
+  if (executionState === 'complete')     s.synthesis = 'complete';
+  if (executionState === 'error') {
+    if (activeAgentKey && agentNodeIds.includes(activeAgentKey)) {
+      s[activeAgentKey] = 'error';
+    } else {
+      s.synthesis = 'error';
+    }
+  }
   return s;
 }
 
-interface Dot { key: number; pathId: string; color: string; dur: string; }
+/* -- Colour helpers ------------------------------------------- */
 
 function nStroke(id: string, st: NodeStatus): string {
   if (st === 'error')    return '#ef4444';
@@ -131,66 +184,82 @@ function nLabel(id: string, st: NodeStatus): string {
 }
 function eStroke(pathId: string, statuses: NodeStatuses): string {
   if (pathId.endsWith('-synthesis')) {
-    const k = pathId.split('-')[0]; const st = statuses[k];
+    const k = pathId.split('-')[0];
+    const st = statuses[k];
     return (st === 'complete' || st === 'active') ? '#3730a3' : '#0a1224';
   }
   if (pathId.startsWith('orc-')) {
-    const k = pathId.split('-')[1]; const st = statuses[k];
+    const k = pathId.split('-')[1];
+    const st = statuses[k];
     return (st === 'complete' || st === 'active' || st === 'error') ? '#0c5545' : '#0a1224';
   }
   return '#0a1224';
 }
 
-export default function AgentFlowCanvas({ state, nodes, agentsToInvoke }: AgentFlowCanvasProps) {
-  const resolvedAgents = (agentsToInvoke && agentsToInvoke.length > 0) ? agentsToInvoke : DEFAULT_AGENTS;
-  const { nodeDefs, edgePaths } = buildLayout(resolvedAgents);
-  const agentNodeIds = resolvedAgents.slice(0, 3).map(agentIdToKey);
-  const statuses     = deriveStatuses(state, nodes, agentNodeIds);
-  const orcSt = statuses['orchestrator']; const synSt = statuses['synthesis'];
+/* -- Traveling dot type --------------------------------------- */
 
-  const [dots, setDots]  = useState<Dot[]>([]);
-  const dotKeyRef        = useRef(0);
-  const prevNodeCountRef = useRef(0);
-  const prevStateRef     = useRef<ExecutionState>('idle');
-  const synthFiredRef    = useRef(false);
+interface Dot { key: number; pathId: string; color: string; dur: string; }
+
+/* -- Component ------------------------------------------------- */
+
+export default function AgentFlowCanvas({ executionState, invokedAgents, activeAgent }: AgentFlowCanvasProps) {
+  const resolvedAgents = invokedAgents.length > 0 ? invokedAgents : [];
+  const { nodeDefs, edgePaths } = buildLayout(resolvedAgents);
+  const agentNodeIds    = resolvedAgents.slice(0, MAX_AGENTS).map(agentKey);
+  const activeAgentKey  = activeAgent ? agentKey(activeAgent) : '';
+  const statuses        = deriveStatuses(executionState, agentNodeIds, activeAgentKey);
+  const orcSt  = statuses['orchestrator'];
+  const synSt  = statuses['synthesis'];
+
+  const [dots, setDots]   = useState<Dot[]>([]);
+  const dotKeyRef         = useRef(0);
+  const prevActiveRef     = useRef('');
+  const prevStateRef      = useRef<ExecutionState>('idle');
+  const synthFiredRef     = useRef(false);
 
   function fire(pathId: string, color = '#22d3ee', delay = 0, dur = '0.8s') {
     if (!edgePaths[pathId]) return;
     const go = () => {
       const key = ++dotKeyRef.current;
       setDots(p => [...p, { key, pathId, color, dur }]);
-      setTimeout(() => setDots(p => p.filter(d => d.key !== key)), 1300);
+      setTimeout(() => setDots(p => p.filter(d => d.key !== key)), 1400);
     };
     if (delay > 0) setTimeout(go, delay); else go();
   }
 
+  // Delegation pulse: fires whenever a new agent becomes active
   useEffect(() => {
-    const prev = prevNodeCountRef.current; const cur = nodes.length;
-    if (cur > prev) {
-      const newNode = nodes[cur - 1];
-      const key     = matchAgent(newNode.label, agentNodeIds);
-      if (key) {
-        fire(`orc-${key}`,  '#22d3ee', 0,   '0.75s');
-        fire(`${key}-orc`,  '#0d9488', 700, '0.75s');
-      }
-    }
-    prevNodeCountRef.current = cur;
+    if (!activeAgent || !activeAgentKey) return;
+    if (prevActiveRef.current === activeAgentKey) return;
+    prevActiveRef.current = activeAgentKey;
+    fire(`orc-${activeAgentKey}`,  '#22d3ee', 0,   '0.75s');
+    fire(`${activeAgentKey}-orc`,  '#0d9488', 720, '0.75s');
+  // edgePaths is derived from resolvedAgents; safe to omit from deps
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes.length]);
+  }, [activeAgent]);
 
+  // Synthesis convergence pulses: all completed agents ? synthesis
   useEffect(() => {
-    const prev = prevStateRef.current; prevStateRef.current = state;
-    if (state === 'synthesizing' && prev !== 'synthesizing') synthFiredRef.current = false;
-    if (state === 'synthesizing' && !synthFiredRef.current) {
+    const prev = prevStateRef.current;
+    prevStateRef.current = executionState;
+    if (executionState === 'synthesizing' && prev !== 'synthesizing') {
+      synthFiredRef.current = false;
+    }
+    if (executionState === 'synthesizing' && !synthFiredRef.current) {
       synthFiredRef.current = true;
-      const done = agentNodeIds.filter(id => statuses[id] === 'complete' || statuses[id] === 'error');
-      done.forEach((id, i) => fire(`${id}-synthesis`, '#818cf8', i * 230, '0.9s'));
+      agentNodeIds.forEach((id, i) =>
+        fire(`${id}-synthesis`, '#818cf8', i * 230, '0.9s'),
+      );
+    }
+    if (executionState === 'idle') {
+      prevActiveRef.current = '';
+      synthFiredRef.current = false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [executionState]);
 
   return (
-    <section className={`${styles.container} ${styles['s_' + state]}`}>
+    <section className={`${styles.container} ${styles['s_' + executionState]}`}>
       <div className={styles.overlay} />
       <svg viewBox={VIEWBOX} preserveAspectRatio="xMidYMid meet" className={styles.svg}>
         <defs>
@@ -202,30 +271,34 @@ export default function AgentFlowCanvas({ state, nodes, agentsToInvoke }: AgentF
           <radialGradient id="orcAura"     cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#14b8a6" stopOpacity="0.18"/><stop offset="100%" stopColor="#14b8a6" stopOpacity="0"/></radialGradient>
           <radialGradient id="orcAuraIdle" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#14b8a6" stopOpacity="0.04"/><stop offset="100%" stopColor="#14b8a6" stopOpacity="0"/></radialGradient>
           <radialGradient id="synAura"     cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#6366f1" stopOpacity="0.20"/><stop offset="100%" stopColor="#6366f1" stopOpacity="0"/></radialGradient>
-          {Object.entries(edgePaths).map(([id, d]) => (<path key={id} id={`tp-${id}`} d={d} fill="none"/>))}
+          {Object.entries(edgePaths).map(([id, d]) => (
+            <path key={id} id={`tp-${id}`} d={d} fill="none"/>
+          ))}
         </defs>
 
         {/* Auras */}
         <circle cx={ORC_CX} cy={ORC_CY} r={110} fill={orcSt === 'active' || orcSt === 'complete' ? 'url(#orcAura)' : 'url(#orcAuraIdle)'} opacity={orcSt === 'active' ? 1 : 0.6}/>
         <circle cx={SYN_CX} cy={SYN_CY} r={90}  fill="url(#synAura)" opacity={synSt === 'active' ? 1 : synSt === 'complete' ? 0.5 : 0}/>
 
-        {/* Drawn edges (forward + synthesis, not return paths) */}
-        {Object.entries(edgePaths).filter(([id]) => !id.endsWith('-orc')).map(([id, d]) => {
-          const agentKey = id.startsWith('orc-') ? id.split('-')[1] : id.split('-')[0];
-          const isIdle   = statuses[agentKey] === 'idle';
-          return (
-            <path key={id} d={d} fill="none"
-              stroke={eStroke(id, statuses)} strokeWidth="0.8"
-              strokeDasharray={isIdle ? '4 5' : undefined}
-              opacity={isIdle ? 0.3 : 0.8}
-            />
-          );
-        })}
+        {/* Drawn edges — forward + synthesis only (not return paths) */}
+        {Object.entries(edgePaths)
+          .filter(([id]) => !id.endsWith('-orc'))
+          .map(([id, d]) => {
+            const agentK = id.startsWith('orc-') ? id.split('-')[1] : id.split('-')[0];
+            const isIdle = statuses[agentK] === 'idle';
+            return (
+              <path key={id} d={d} fill="none"
+                stroke={eStroke(id, statuses)} strokeWidth="0.8"
+                strokeDasharray={isIdle ? '4 5' : undefined}
+                opacity={isIdle ? 0.3 : 0.8}
+              />
+            );
+          })}
 
-        {/* BrainAura crown â€” renders behind orchestrator node */}
-        <BrainAura state={state} cx={ORC_CX} cy={ORC_CY} />
+        {/* BrainAura crown */}
+        <BrainAura state={executionState} cx={ORC_CX} cy={ORC_CY} />
 
-        {/* Orchestrator */}
+        {/* Orchestrator hub */}
         <g>
           {orcSt === 'active' && (<>
             <circle cx={ORC_CX} cy={ORC_CY} fill="none" stroke="#14b8a6" strokeWidth="1.5">
@@ -253,11 +326,12 @@ export default function AgentFlowCanvas({ state, nodes, agentsToInvoke }: AgentF
             fill={nLabel('orchestrator', orcSt)} fontFamily="inherit" opacity="0.55">CONTROL PLANE</text>
         </g>
 
-        {/* Agent nodes */}
+        {/* Dynamic agent nodes — only rendered agents, no ghosts */}
         {agentNodeIds.map(key => {
           const def = nodeDefs.find(n => n.id === key);
           if (!def || !def.w || !def.h) return null;
-          const { cx, cy, w, h, lines } = def; const st = statuses[key];
+          const { cx, cy, w, h, lines } = def;
+          const st = statuses[key];
           return (
             <g key={key}>
               {st === 'active' && (
@@ -278,7 +352,7 @@ export default function AgentFlowCanvas({ state, nodes, agentsToInvoke }: AgentF
           );
         })}
 
-        {/* Synthesis */}
+        {/* Synthesis hub */}
         <g>
           {synSt === 'active' && (<>
             <circle cx={SYN_CX} cy={SYN_CY} fill="none" stroke="#6366f1" strokeWidth="2">
@@ -318,18 +392,18 @@ export default function AgentFlowCanvas({ state, nodes, agentsToInvoke }: AgentF
 
       {/* State bar */}
       <div className={styles.stateBar}>
-        <span className={`${styles.stateDot} ${styles['sdot_' + state]}`}>
+        <span className={`${styles.stateDot} ${styles['sdot_' + executionState]}`}>
           <span className={styles.stateDotCore}/>
         </span>
         <span className={styles.stateLabel}>
-          {state === 'idle'         ? 'ORCHESTRATOR READY'    :
-           state === 'planning'     ? 'DECOMPOSING INTENT\u2026'    :
-           state === 'executing'    ? 'DELEGATING TO AGENTS\u2026'  :
-           state === 'synthesizing' ? 'CONVERGING FINDINGS\u2026'   :
-           state === 'complete'     ? 'DECISION COMPLETE'     :
-                                      'EXECUTION ERROR'}
+          {executionState === 'idle'         ? 'ORCHESTRATOR READY'          :
+           executionState === 'planning'     ? 'DECOMPOSING INTENT\u2026'    :
+           executionState === 'executing'    ? 'DELEGATING TO AGENTS\u2026'  :
+           executionState === 'synthesizing' ? 'CONVERGING FINDINGS\u2026'   :
+           executionState === 'complete'     ? 'DECISION COMPLETE'           :
+                                               'EXECUTION ERROR'}
         </span>
-        {state !== 'idle' && (
+        {executionState !== 'idle' && resolvedAgents.length > 0 && (
           <span className={styles.agentCount}>
             {resolvedAgents.length} AGENT{resolvedAgents.length !== 1 ? 'S' : ''}
           </span>
