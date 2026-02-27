@@ -100,7 +100,7 @@ type NodeStatus   = 'idle' | 'active' | 'complete' | 'error';
 type NodeStatuses = Record<string, NodeStatus>;
 
 /**
- * Pure derivation — no AgentNode array needed.
+ * Pure derivation ï¿½ no AgentNode array needed.
  * Status is computed from invokedAgents order + activeAgent + executionState.
  *
  * Agents before activeAgent in the list  ? complete
@@ -280,7 +280,7 @@ export default function AgentFlowCanvas({ executionState, invokedAgents, activeA
         <circle cx={ORC_CX} cy={ORC_CY} r={110} fill={orcSt === 'active' || orcSt === 'complete' ? 'url(#orcAura)' : 'url(#orcAuraIdle)'} opacity={orcSt === 'active' ? 1 : 0.6}/>
         <circle cx={SYN_CX} cy={SYN_CY} r={90}  fill="url(#synAura)" opacity={synSt === 'active' ? 1 : synSt === 'complete' ? 0.5 : 0}/>
 
-        {/* Drawn edges — forward + synthesis only (not return paths) */}
+        {/* Drawn edges ï¿½ forward + synthesis only (not return paths) */}
         {Object.entries(edgePaths)
           .filter(([id]) => !id.endsWith('-orc'))
           .map(([id, d]) => {
@@ -326,7 +326,7 @@ export default function AgentFlowCanvas({ executionState, invokedAgents, activeA
             fill={nLabel('orchestrator', orcSt)} fontFamily="inherit" opacity="0.55">CONTROL PLANE</text>
         </g>
 
-        {/* Dynamic agent nodes — only rendered agents, no ghosts */}
+        {/* Dynamic agent nodes ï¿½ only rendered agents, no ghosts */}
         {agentNodeIds.map(key => {
           const def = nodeDefs.find(n => n.id === key);
           if (!def || !def.w || !def.h) return null;

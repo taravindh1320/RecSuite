@@ -13,7 +13,7 @@ Triggers `delayed_recon_query`. Routes to the **Monitoring Signal Agent** only. 
 > Resolved instances: `INV`, `SNPB`, `FX`, `ICG`
 
 1. **Show me delayed recon jobs for INV.**
-   - Intent: `delayed_recon_query` | Severity: `medium` | Instance: `INV`
+   - Intent: `delayed_recon_query` | Severity: `high` | Instance: `INV`
    - Agents: Signal
    - Report: Delayed Recon Jobs section — `goa.cash`, `nyk.cash`, `cen.cash`
 

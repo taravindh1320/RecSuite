@@ -15,6 +15,7 @@ import { runControlCycle } from '@/services/orchestrator';
 import CommandFeed, { type FeedEntry } from '@/components/CommandFeed';
 import OperationsDrawer from '@/components/OperationsDrawer';
 import AgentFlowCanvas from '@/components/AgentFlowCanvas';
+import AppHeader from '@/components/AppHeader';
 
 import styles from './Dashboard.module.css';
 
@@ -99,6 +100,9 @@ export default function Dashboard() {
     <div className={`${styles.dashboard} ${stateClass}`}>
       {/* Progress bar */}
       <div className={styles.progressBar} />
+
+      {/* Application header */}
+      <AppHeader executionState={executionState} />
 
       {/* Full-canvas energy overlay */}
       <div className={styles.energyOverlay} />
