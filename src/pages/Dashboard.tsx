@@ -1,23 +1,11 @@
 /* ─────────────────────────────────────────────────────────
- *  Dashboard — Primary layout & orchestration state owner
- *
- *  Owns the centralized ExecutionState and wires lifecycle
- *  callbacks from the orchestrator into all child components.
- *
- *  ┌────────────────────────────────────────────┐
- *  │  Top 65 %                                  │
- *  │  ┌─────────┬─────────────┬────────────┐    │
- *  │  │  Chat   │ AgentGraph  │  ToolLog   │    │
- *  │  └─────────┴─────────────┴────────────┘    │
- *  ├────────────────────────────────────────────┤
- *  │  Bottom 35 %                               │
- *  │  AICoreAnimation (state‑driven)            │
- *  └────────────────────────────────────────────┘
+ *  Dashboard — Kinetic AI Brain Interface
+ *  Layout: 30 % CommandFeed │ 70 % Brain/Flow
+ *  Operations log: collapsible right-edge overlay drawer
  * ───────────────────────────────────────────────────────── */
 
 import { useState, useCallback } from 'react';
 import type {
-  ChatMessage,
   AgentNode,
   ToolCall,
   ReportData,
@@ -25,122 +13,124 @@ import type {
 import type { ExecutionState } from '@/types/execution';
 import { runControlCycle } from '@/services/orchestrator';
 
-import Chat from '@/components/Chat';
-import AgentGraph from '@/components/AgentGraph';
-import ToolLog from '@/components/ToolLog';
+import CommandFeed, { type FeedEntry } from '@/components/CommandFeed';
+import OperationsDrawer from '@/components/OperationsDrawer';
 import AgentFlowCanvas from '@/components/AgentFlowCanvas';
 
 import styles from './Dashboard.module.css';
 
-/* ── Helpers ─────────────────────────────────────────────── */
+/* ── Feed entry id helper ────────────────────────────────── */
 
-let _msgSeq = 0;
-const msgId = () => `msg-${Date.now()}-${++_msgSeq}`;
-
-function sysMsg(content: string): ChatMessage {
-  return { id: msgId(), role: 'system', content, timestamp: Date.now() };
-}
+let _feSeq = 0;
+const feId = () => `fe-${Date.now()}-${++_feSeq}`;
 
 /* ── Component ───────────────────────────────────────────── */
 
 export default function Dashboard() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [nodes, setNodes] = useState<AgentNode[]>([]);
-  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
+  const [command,       setCommand]       = useState('');
+  const [feedEntries,   setFeedEntries]   = useState<FeedEntry[]>([]);
+  const [nodes,         setNodes]         = useState<AgentNode[]>([]);
+  const [toolCalls,     setToolCalls]     = useState<ToolCall[]>([]);
   const [executionState, setExecutionState] = useState<ExecutionState>('idle');
   const [agentsToInvoke, setAgentsToInvoke] = useState<string[]>([]);
-  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [reportData,    setReportData]    = useState<ReportData | null>(null);
 
-  const isProcessing = executionState !== 'idle' && executionState !== 'complete' && executionState !== 'error';
+  const isProcessing = executionState !== 'idle'
+    && executionState !== 'complete'
+    && executionState !== 'error';
+
+  const pushEntry = useCallback((type: FeedEntry['type'], text: string) => {
+    setFeedEntries(prev => [...prev, { id: feId(), ts: Date.now(), text, type }]);
+  }, []);
 
   const handleSend = useCallback(async (text: string) => {
-    /* 1. Append user message & reset panels */
-    const userMsg: ChatMessage = {
-      id: msgId(),
-      role: 'user',
-      content: text,
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    /* 1. Reset panels, capture command */
+    setCommand(text);
+    setFeedEntries([]);
     setNodes([]);
     setToolCalls([]);
     setReportData(null);
+    setExecutionState('idle');
 
     try {
-      /* 2. Run orchestration control cycle with lifecycle callbacks */
+      /* 2. Run orchestration with lifecycle callbacks */
       const result = await runControlCycle(text, {
 
         onPlanning(profile) {
           setExecutionState('planning');
           setAgentsToInvoke(profile.agentsToInvoke);
-          setMessages((prev) => [
-            ...prev,
-            sysMsg('Analyzing request…'),
-          ]);
+          pushEntry('planning', 'Decomposing intent…');
         },
 
         onAgentStart(displayName) {
           setExecutionState('executing');
-          setMessages((prev) => [
-            ...prev,
-            sysMsg(`Consulting ${displayName}…`),
-          ]);
+          pushEntry('agent', `Delegating to ${displayName}`);
         },
 
         onAgentComplete(_displayName, response, node) {
-          setNodes((prev) => [...prev, node]);
-          setToolCalls((prev) => [...prev, ...response.toolCalls]);
+          setNodes(prev => [...prev, node]);
+          setToolCalls(prev => [...prev, ...response.toolCalls]);
         },
 
         onSynthesis() {
           setExecutionState('synthesizing');
-          setMessages((prev) => [
-            ...prev,
-            sysMsg('Synthesizing findings…'),
-          ]);
+          pushEntry('synthesis', 'Converging findings…');
         },
 
         onComplete() {
           setExecutionState('complete');
+          pushEntry('complete', 'Decision complete.');
         },
       });
 
-      /* 3. Capture report data — no assistant bubble appended */
+      /* 3. Capture report */
       setReportData(result.reportData);
 
     } catch {
       setExecutionState('error');
-      setMessages((prev) => [
-        ...prev,
-        sysMsg('An error occurred during analysis. Please try again.'),
-      ]);
+      pushEntry('error', 'Execution error. Retry.');
     }
-  }, []);
+  }, [pushEntry]);
+
+  const stateClass = styles[`s_${executionState}`] ?? '';
 
   return (
-    <div className={styles.dashboard}>
-      {/* ── Top: orchestration panels (65 %) ────────────── */}
-      <div className={styles.top}>
-        <div className={styles.chat}>
-          <Chat
-            messages={messages}
-            isProcessing={isProcessing}
-            onSend={handleSend}
+    <div className={`${styles.dashboard} ${stateClass}`}>
+      {/* Progress bar */}
+      <div className={styles.progressBar} />
+
+      {/* Full-canvas energy overlay */}
+      <div className={styles.energyOverlay} />
+
+      {/* ── 2-column main layout: 30 % + 70 % ──────────── */}
+      <div className={styles.main}>
+
+        {/* Left 30 %: Command Feed */}
+        <div className={styles.cmdFeed}>
+          <CommandFeed
+            command={command}
+            feedEntries={feedEntries}
             reportData={reportData}
+            isProcessing={isProcessing}
+            executionState={executionState}
+            onSend={handleSend}
           />
         </div>
-        <div className={styles.graph}>
-          <AgentGraph nodes={nodes} executionState={executionState} />
+
+        {/* Right 70 %: Orchestration Brain */}
+        <div className={styles.brain}>
+          <AgentFlowCanvas
+            state={executionState}
+            nodes={nodes}
+            agentsToInvoke={agentsToInvoke}
+          />
         </div>
-        <div className={styles.log}>
-          <ToolLog calls={toolCalls} />
-        </div>
+
       </div>
 
-      {/* ── Bottom: Agent flow canvas ──────────────────── */}
-      <div className={styles.bottom}>
-        <AgentFlowCanvas state={executionState} nodes={nodes} agentsToInvoke={agentsToInvoke} />
-      </div>
+      {/* Operations log: collapsible right-edge drawer */}
+      <OperationsDrawer calls={toolCalls} executionState={executionState} />
     </div>
   );
 }
+

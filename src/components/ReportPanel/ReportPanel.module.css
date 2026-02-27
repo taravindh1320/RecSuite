@@ -1,165 +1,203 @@
-/* ReportPanel.module.css */
+﻿/* 
+ *  ReportPanel  AI Decision Report styles
+ *  Designed for narrow 20 % column display
+ *  */
 
 .panel {
-  background: #111b2d;
-  border: 1px solid #1e3050;
-  border-radius: 6px;
-  padding: 14px 16px;
-  font-size: 12px;
+  background: #0c1525;
+  border: 1px solid #152038;
+  border-top: 2px solid #0d9488;
+  border-radius: 0 0 6px 6px;
+  padding: 12px 14px;
+  font-size: 11px;
   color: #c8d4e8;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* ── Header ─────────────────────────────────────────── */
+/*  Header  */
 
 .header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #1e3050;
+  border-bottom: 1px solid #152038;
 }
 
-.title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #e0ecff;
-  text-transform: capitalize;
-  letter-spacing: 0.02em;
+.reportLabel {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #0d9488;
+  text-transform: uppercase;
 }
 
-.meta {
+.headerMeta {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .domain {
-  font-size: 10px;
-  color: #56b6c2;
-  background: rgba(86, 182, 194, 0.1);
-  padding: 2px 6px;
+  font-size: 9px;
+  color: #22d3ee;
+  background: rgba(34,211,238,0.08);
+  padding: 2px 5px;
   border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .ts {
-  font-size: 10px;
-  color: #4a6080;
+  font-size: 9px;
+  color: #2d4a60;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Severity badge ──────────────────────────────────── */
+/*  Sections  */
 
-.badge {
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sectionLabel {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2a4060;
+}
+
+.summary {
+  margin: 0;
+  color: #8aa4c0;
+  line-height: 1.55;
+  font-size: 10.5px;
+}
+
+/*  Risk + Confidence row  */
+
+.riskRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.riskCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.riskBadge {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 2px 6px;
+  padding: 3px 6px;
   border-radius: 3px;
+  align-self: flex-start;
 }
 
-.badge_low      { background: rgba(78, 205, 196, 0.15); color: #4ecdc4; }
-.badge_medium   { background: rgba(255, 221, 87, 0.15);  color: #ffdd57; }
-.badge_high     { background: rgba(255, 152, 0, 0.15);   color: #ff9800; }
-.badge_critical { background: rgba(255, 82, 82, 0.18);   color: #ff5252; }
+.risk_low      { background: rgba(13,148,136,0.15);  color: #2dd4bf; }
+.risk_medium   { background: rgba(234,179,8,0.15);   color: #facc15; }
+.risk_high     { background: rgba(249,115,22,0.15);  color: #fb923c; }
+.risk_critical { background: rgba(239,68,68,0.15);   color: #f87171; }
 
-/* ── Sections ────────────────────────────────────────── */
+/*  Confidence bar  */
 
-.section {
+.confidenceBar {
+  height: 4px;
+  background: #0f1e30;
+  border-radius: 2px;
+  overflow: hidden;
+  flex: 1;
+  margin-top: 2px;
+}
+
+.confidenceFill {
+  height: 100%;
+  background: linear-gradient(to right, #0d9488, #22d3ee);
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+.confidenceNum {
+  font-size: 9px;
+  color: #22d3ee;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/*  Findings list (stacked, not table)  */
+
+.findingsList {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.sectionLabel {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #4a6080;
+.findingItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 8px;
+  background: #0a1422;
+  border: 1px solid #111e30;
+  border-radius: 4px;
 }
 
-.summary {
-  margin: 0;
-  color: #a8bed8;
-  line-height: 1.55;
-}
-
-/* ── Findings table ──────────────────────────────────── */
-
-.findings {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.findingRow {
-  border-bottom: 1px solid #151f30;
-}
-
-.findingRow:last-child {
-  border-bottom: none;
+.findingTop {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .findingLabel {
-  padding: 5px 8px 5px 0;
-  color: #6a84a4;
-  font-size: 11px;
-  white-space: nowrap;
-  width: 38%;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3a5870;
 }
 
 .findingValue {
-  padding: 5px 8px;
-  color: #c8d4e8;
-  font-size: 11px;
-  width: 58%;
+  font-size: 10.5px;
+  color: #a8c0d8;
+  padding-left: 12px;
+  line-height: 1.4;
 }
 
-.findingStatus {
-  padding: 5px 0;
-  text-align: right;
-  width: 4%;
-}
-
-/* ── Status dots ─────────────────────────────────────── */
+/*  Status dots  */
 
 .statusDot {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.dot_ok    { background: #4ecdc4; }
-.dot_warn  { background: #ffdd57; }
-.dot_error { background: #ff5252; }
-.dot_info  { background: #56b6c2; }
+.dot_ok    { background: #0d9488; box-shadow: 0 0 4px rgba(13,148,136,0.6); }
+.dot_warn  { background: #eab308; box-shadow: 0 0 4px rgba(234,179,8,0.5); }
+.dot_error { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,0.6); }
+.dot_info  { background: #22d3ee; box-shadow: 0 0 4px rgba(34,211,238,0.5); }
 
-/* ── Impact scope list ───────────────────────────────── */
-
-.list {
-  margin: 0;
-  padding: 0 0 0 14px;
-  color: #a0b4cc;
-  line-height: 1.7;
-  font-size: 11px;
-}
-
-/* ── Recommended actions ─────────────────────────────── */
+/*  Recommended actions  */
 
 .actionList {
   margin: 0;
-  padding: 0 0 0 16px;
-  color: #a0b4cc;
-  line-height: 1.8;
-  font-size: 11px;
+  padding: 0 0 0 14px;
+  color: #8aa4bc;
+  line-height: 1.75;
+  font-size: 10.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .actionList li {

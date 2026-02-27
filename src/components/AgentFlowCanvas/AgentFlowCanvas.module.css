@@ -1,67 +1,151 @@
 /* ─────────────────────────────────────────────────────────
- *  AgentFlowCanvas — minimal styles
+ *  AgentFlowCanvas — kinetic orchestration brain styles
  * ───────────────────────────────────────────────────────── */
 
 .container {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #060d1b;
-  border-radius: 8px;
+  background: #050c1a;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  transition: background 0.5s ease;
 }
+
+/* State-tinted backgrounds */
+.s_planning     { background: #060e1d; }
+.s_executing    { background: #050d1b; }
+.s_synthesizing { background: #06081e; }
+.s_complete     { background: #050c18; }
+.s_error        { background: #0a0608; }
+
+/* ── Energy overlay ─────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.6s ease, background 0.6s ease;
+  opacity: 0;
+}
+
+.s_executing .overlay {
+  opacity: 1;
+  background: radial-gradient(ellipse 55% 60% at 25% 50%,
+    rgba(20,184,166,0.05) 0%, transparent 70%);
+}
+
+.s_planning .overlay {
+  opacity: 1;
+  background: radial-gradient(ellipse 45% 50% at 25% 50%,
+    rgba(86,182,194,0.04) 0%, transparent 70%);
+}
+
+.s_synthesizing .overlay {
+  opacity: 1;
+  background: radial-gradient(
+    ellipse 40% 50% at 25% 50%, rgba(20,184,166,0.03) 0%, transparent 50%
+  ),
+  radial-gradient(
+    ellipse 40% 50% at 88% 50%, rgba(99,102,241,0.07) 0%, transparent 60%
+  );
+}
+
+.s_complete .overlay {
+  opacity: 0.7;
+  background: radial-gradient(ellipse 70% 70% at 50% 50%,
+    rgba(13,148,136,0.03) 0%, transparent 70%);
+}
+
+.s_error .overlay {
+  opacity: 0.7;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%,
+    rgba(239,68,68,0.04) 0%, transparent 70%);
+}
+
+/* ── SVG ────────────────────────────────────────────────── */
 
 .svg {
   width: 100%;
   height: 100%;
   display: block;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
 }
 
-/* ── Status label (bottom-left) ─────────────────────────── */
+/* ── State bar ──────────────────────────────────────────── */
 
-.label {
-  position: absolute;
-  bottom: 10px;
-  left: 16px;
+.stateBar {
+  position: relative;
+  z-index: 2;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: #334155;
-  pointer-events: none;
-  transition: color 0.3s ease;
-}
-
-.executing .label,
-.planning .label  { color: #64748b; }
-.synthesizing .label { color: #6366f1; opacity: 0.9; }
-.complete .label  { color: #475569; }
-.error .label     { color: #f87171; }
-
-.dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #1e3a4a;
+  gap: 10px;
+  padding: 9px 18px 11px;
+  border-top: 1px solid #0a1828;
   flex-shrink: 0;
-  animation: dotBlink 2.5s ease-in-out infinite;
-  transition: background 0.3s ease;
+  background: rgba(5,12,26,0.8);
 }
 
-.idle .dot        { animation-duration: 4s; }
-.planning .dot    { animation-duration: 1s; }
-.executing .dot   { animation-duration: 0.4s; }
-.synthesizing .dot{ animation-duration: 0.5s; }
-.complete .dot    { animation-duration: 5s; }
-.error .dot       { animation-duration: 0.6s; }
-
-@keyframes dotBlink {
-  0%, 100% { opacity: 0.25; }
-  50%      { opacity: 1; }
+.stateDot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.stateDotCore {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #162840;
+}
+
+.sdot_idle .stateDotCore         { background: #162840; }
+.sdot_planning .stateDotCore     { background: #56b6c2; animation: dotPulse 1s ease infinite; }
+.sdot_executing .stateDotCore    { background: #14b8a6; animation: dotPulse 0.5s ease infinite; }
+.sdot_synthesizing .stateDotCore { background: #6366f1; animation: dotPulse 0.7s ease infinite; }
+.sdot_complete .stateDotCore     { background: #0d9488; }
+.sdot_error .stateDotCore        { background: #ef4444; animation: dotPulse 0.4s ease infinite; }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+
+.stateLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1e3a52;
+  transition: color 0.4s ease;
+}
+
+.s_planning .stateLabel     { color: #2a6878; }
+.s_executing .stateLabel    { color: #14b8a6; }
+.s_synthesizing .stateLabel { color: #6366f1; }
+.s_complete .stateLabel     { color: #0d9488; }
+.s_error .stateLabel        { color: #ef4444; }
+
+.agentCount {
+  margin-left: auto;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1a3048;
+}
+
+.s_executing .agentCount,
+.s_executing .agentCount    { color: #0a3a30; }
+.s_synthesizing .agentCount { color: #1a1a60; }
+.s_complete .agentCount     { color: #0a3028; }

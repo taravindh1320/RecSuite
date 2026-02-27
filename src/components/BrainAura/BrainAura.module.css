@@ -1,0 +1,151 @@
+/* ─────────────────────────────────────────────────────────
+ *  BrainAura.module.css
+ *  Institutional AI crown — restrained, kinetic
+ * ───────────────────────────────────────────────────────── */
+
+/* ── Rotation animations ──────────────────────────────── */
+
+@keyframes rotCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes rotCCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+@keyframes outerBreathe {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1; }
+}
+
+@keyframes orbitCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes synthRippleOut {
+  0%   { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes errorPulseRipple {
+  0%   { transform: scale(0.7); opacity: 0.7; }
+  100% { transform: scale(2);   opacity: 0; }
+}
+
+/* ── Rings ────────────────────────────────────────────── */
+
+.innerRing {
+  transform-origin: 0px 0px;
+  animation: rotCW linear infinite;
+  /* duration overridden by inline style per state */
+}
+
+.middleRing {
+  transform-origin: 0px 0px;
+  animation: rotCCW linear infinite;
+}
+
+.outerRing {
+  transform-origin: 0px 0px;
+  animation: outerBreathe ease-in-out infinite;
+}
+
+.outerCircle {
+  /* no extra -- breathe animation on parent group */
+}
+
+.orbit {
+  transform-origin: 0px 0px;
+  animation: orbitCW linear infinite;
+}
+
+/* ── Ripple effects ───────────────────────────────────── */
+
+.synthRipple {
+  transform-origin: 0px 0px;
+  animation: synthRippleOut 1.2s cubic-bezier(0, 0.4, 0.6, 1) forwards;
+  pointer-events: none;
+}
+
+.errorRipple {
+  transform-origin: 0px 0px;
+  animation: errorPulseRipple 1.0s cubic-bezier(0, 0.4, 0.6, 1) forwards;
+  pointer-events: none;
+}
+
+/* ── State variants ───────────────────────────────────── */
+
+/* idle: very low presence */
+.aura.s_idle .innerRing,
+.aura.s_idle .middleRing {
+  opacity: 0.3;
+}
+.aura.s_idle .outerRing {
+  opacity: 0.25;
+}
+.aura.s_idle .orbit {
+  opacity: 0.3;
+}
+
+/* planning: starts waking */
+.aura.s_planning .innerRing,
+.aura.s_planning .middleRing {
+  opacity: 0.55;
+}
+.aura.s_planning .outerRing {
+  opacity: 0.5;
+}
+.aura.s_planning .orbit {
+  opacity: 0.55;
+}
+
+/* executing: most kinetic */
+.aura.s_executing .innerRing,
+.aura.s_executing .middleRing {
+  opacity: 0.85;
+}
+.aura.s_executing .outerRing {
+  opacity: 0.75;
+}
+.aura.s_executing .orbit {
+  opacity: 0.9;
+}
+
+/* synthesizing: inner brightens, outer settles */
+.aura.s_synthesizing .innerRing {
+  opacity: 1;
+}
+.aura.s_synthesizing .middleRing {
+  opacity: 0.9;
+}
+.aura.s_synthesizing .outerRing {
+  opacity: 0.6;
+}
+.aura.s_synthesizing .orbit {
+  opacity: 0.8;
+}
+
+/* complete: quiet, stabilized */
+.aura.s_complete .innerRing,
+.aura.s_complete .middleRing {
+  opacity: 0.45;
+}
+.aura.s_complete .outerRing {
+  opacity: 0.35;
+}
+.aura.s_complete .orbit {
+  opacity: 0.4;
+}
+
+/* error: reduced to near nothing, ripple handles the moment */
+.aura.s_error .innerRing {
+  opacity: 0.2;
+}
+.aura.s_error .middleRing,
+.aura.s_error .outerRing,
+.aura.s_error .orbit {
+  opacity: 0.15;
+}
