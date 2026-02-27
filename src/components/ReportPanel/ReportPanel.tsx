@@ -6,8 +6,115 @@
  *  assessment, and recommended actions.
  * ───────────────────────────────────────────────────────── */
 
-import type { ReportData, FindingStatus } from '@/types/agent';
+import type { ReportData, FindingStatus, DomainSection } from '@/types/agent';
 import styles from './ReportPanel.module.css';
+
+/* ── Domain Section sub-component ───────────────────────── */
+
+function MtpBar({ mtp, threshold }: { mtp: number; threshold: number }) {
+  const pct = Math.min(100, Math.round((mtp / 250) * 100));
+  const cls = mtp > 180 ? styles.barDanger : mtp > threshold ? styles.barWarn : styles.barOk;
+  return (
+    <div className={styles.barTrack}>
+      <div className={`${styles.barFill} ${cls}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function StatBar({ value, warnAt, dangerAt }: { value: number; warnAt: number; dangerAt?: number }) {
+  const pct = Math.min(100, value);
+  const cls = (dangerAt && value > dangerAt) ? styles.barDanger : value > warnAt ? styles.barWarn : styles.barOk;
+  return (
+    <div className={styles.barTrack}>
+      <div className={`${styles.barFill} ${cls}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function DomainSectionPanel({ section }: { section: DomainSection }) {
+  if (section.type === 'delayed_recon') {
+    return (
+      <div className={styles.section}>
+        <div className={styles.sectionLabel}>
+          Delayed Recon Jobs
+          <span className={styles.countBadge}>{section.recons.length}</span>
+        </div>
+        <div className={styles.instanceTag}>{section.instanceName} ({section.instanceId})</div>
+        <div className={styles.reconList}>
+          {section.recons.map((r) => (
+            <span key={r} className={styles.reconChip}>{r}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (section.type === 'high_mtp') {
+    return (
+      <div className={styles.section}>
+        <div className={styles.sectionLabel}>
+          High MTP Accounts
+          <span className={styles.countBadge}>{section.accounts.length}</span>
+        </div>
+        <div className={styles.instanceTag}>{section.instanceName} ({section.instanceId})</div>
+        <div className={styles.mtpTable}>
+          {section.accounts.map((a) => (
+            <div key={a.name} className={styles.mtpRow}>
+              <span className={styles.mtpName}>{a.name}</span>
+              <MtpBar mtp={a.mtp} threshold={section.threshold} />
+              <span className={`${styles.mtpValue} ${a.mtp > 180 ? styles.valDanger : a.mtp > section.threshold ? styles.valWarn : ''}`}>
+                {a.mtp}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (section.type === 'server_diagnosis') {
+    return (
+      <div className={styles.section}>
+        <div className={styles.sectionLabel}>Server Diagnostics</div>
+        <div className={styles.instanceTag}>{section.serverId}</div>
+        <div className={styles.statGrid}>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>CPU</span>
+            <StatBar value={section.cpu} warnAt={75} dangerAt={90} />
+            <span className={`${styles.statValue} ${section.cpu > 75 ? styles.valWarn : ''}`}>{section.cpu}%</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>Memory</span>
+            <StatBar value={section.memory} warnAt={80} dangerAt={92} />
+            <span className={`${styles.statValue} ${section.memory > 80 ? styles.valWarn : ''}`}>{section.memory}%</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>Conn Pool</span>
+            <StatBar value={section.connectionPool} warnAt={85} dangerAt={95} />
+            <span className={`${styles.statValue} ${section.connectionPool > 85 ? styles.valDanger : ''}`}>{section.connectionPool}%</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>Active Jobs</span>
+            <div className={styles.barTrack} />
+            <span className={styles.statValue}>{section.activeJobs}</span>
+          </div>
+        </div>
+        {section.dependencies.length > 0 && (
+          <>
+            <div className={`${styles.sectionLabel} ${styles.subLabel}`}>Upstream Dependencies</div>
+            <div className={styles.reconList}>
+              {section.dependencies.map((d) => (
+                <span key={d} className={styles.reconChip}>{d}</span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
 
 interface ReportPanelProps {
   report: ReportData;
@@ -102,6 +209,11 @@ export default function ReportPanel({ report }: ReportPanelProps) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── Domain Section ─────────────────────────── */}
+      {report.domainSection && (
+        <DomainSectionPanel section={report.domainSection} />
       )}
 
       {/* ── Recommended Actions ────────────────────── */}

@@ -74,6 +74,31 @@ export interface ReportFinding {
   status: FindingStatus;
 }
 
+/** Discriminated union for domain-specific report sections */
+export type DomainSection =
+  | {
+      type: 'delayed_recon';
+      instanceId:   string;
+      instanceName: string;
+      recons:       string[];
+    }
+  | {
+      type: 'high_mtp';
+      instanceId:   string;
+      instanceName: string;
+      accounts:     { name: string; mtp: number }[];
+      threshold:    number;
+    }
+  | {
+      type: 'server_diagnosis';
+      serverId:       string;
+      cpu:            number;
+      memory:         number;
+      activeJobs:     number;
+      connectionPool: number;
+      dependencies:   string[];
+    };
+
 export interface ReportData {
   title: string;
   executedAt: number;
@@ -84,4 +109,6 @@ export interface ReportData {
   keyFindings: ReportFinding[];
   impactScope: string[];
   recommendedActions: string[];
+  /** Optional domain-specific structured section */
+  domainSection?: DomainSection;
 }

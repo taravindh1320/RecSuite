@@ -12,6 +12,7 @@
 import type {
   AgentNode,
   AgentResponse,
+  DomainSection,
   OrchestrationResult,
   ReportData,
   ReportFinding,
@@ -34,6 +35,60 @@ function synthesizeSummary(responses: AgentResponse[], profile: IntentProfile): 
   const base = lines.join(' ');
   const domainTag = profile.domain !== 'general' ? ` (${profile.domain})` : '';
   return `${base}${domainTag}`.trim() || 'Analysis complete.';
+}
+
+function buildDomainSection(
+  responses: AgentResponse[],
+  profile: IntentProfile,
+): DomainSection | null {
+  const useCase = profile.extractedContext?.useCase;
+
+  if (useCase === 'delayed_recon') {
+    const r = responses.find((x) => x.agentId === 'recSignalAgent' && x.status === 'success');
+    if (r && r.payload.domain === 'delayed_recon') {
+      return {
+        type: 'delayed_recon',
+        instanceId:   r.payload.instanceId   as string,
+        instanceName: r.payload.instanceName as string,
+        recons:       r.payload.delayedRecons as string[],
+      };
+    }
+  }
+
+  if (useCase === 'high_mtp') {
+    const r = responses.find((x) => x.agentId === 'recSignalAgent' && x.status === 'success');
+    if (r && r.payload.domain === 'high_mtp') {
+      return {
+        type:         'high_mtp',
+        instanceId:   r.payload.instanceId   as string,
+        instanceName: r.payload.instanceName as string,
+        accounts:     r.payload.accounts     as { name: string; mtp: number }[],
+        threshold:    r.payload.threshold    as number,
+      };
+    }
+  }
+
+  if (useCase === 'server_diagnosis') {
+    const srv   = responses.find((x) => x.agentId === 'recServerAgent'  && x.status === 'success');
+    const trace = responses.find((x) => x.agentId === 'recTraceAgent'   && x.status === 'success');
+    if (srv && srv.payload.domain === 'server_diagnosis') {
+      const deps =
+        (trace?.payload.domain === 'server_diagnosis'
+          ? (trace.payload.dependencies as string[])
+          : []) ?? [];
+      return {
+        type:           'server_diagnosis',
+        serverId:       srv.payload.serverId       as string,
+        cpu:            srv.payload.cpu            as number,
+        memory:         srv.payload.memory         as number,
+        activeJobs:     srv.payload.activeJobs     as number,
+        connectionPool: srv.payload.connectionPool as number,
+        dependencies:   deps,
+      };
+    }
+  }
+
+  return null;
 }
 
 function buildReportData(
@@ -90,16 +145,36 @@ function buildReportData(
         status: approved ? 'ok' : 'error',
       });
     }
+    if (r.agentId === 'recServerAgent') {
+      const cpu  = (r.payload.cpu  as number) ?? 0;
+      const mem  = (r.payload.memory as number) ?? 0;
+      const pool = (r.payload.connectionPool as number) ?? 0;
+      const status = (cpu > 75 || mem > 80 || pool > 85) ? 'warn' : 'ok';
+      findings.push({
+        label: 'Server Health',
+        value: `CPU ${cpu}% | Mem ${mem}% | Pool ${pool}%`,
+        status,
+      });
+    }
   }
 
   // Impact scope from trace agent or fallback
   const traceResp  = responses.find((r) => r.agentId === 'recTraceAgent' && r.status === 'success');
+  const serverResp = responses.find((r) => r.agentId === 'recServerAgent' && r.status === 'success');
   const impactScope: string[] = traceResp
     ? [
         `Service: ${(traceResp.payload.affectedService as string) ?? '—'}`,
         `Traces correlated: ${(traceResp.payload.traceIds as string[])?.length ?? '—'}`,
       ]
+    : serverResp
+    ? [
+        `Server: ${(serverResp.payload.serverId as string) ?? '—'}`,
+        `Active jobs: ${serverResp.payload.activeJobs}`,
+      ]
     : profile.agentsToInvoke.map((id) => id.replace(/rec|Agent/g, '').toLowerCase() + ' pipeline');
+
+  // Domain section (structured data for rich ReportPanel rendering)
+  const domainSection = buildDomainSection(responses, profile);
 
   // Recommended actions
   const actions: string[] = [];
@@ -114,10 +189,27 @@ function buildReportData(
   );
   const hasError = responses.some((r) => r.status === 'error');
 
-  if (hasError)           actions.push('Retry failed agents — upstream service may be recovering.');
-  if (hasAnomaly)         actions.push('Investigate anomalous signals — run targeted trace for root cause confirmation.');
+  if (hasError)             actions.push('Retry failed agents — upstream service may be recovering.');
+  if (hasAnomaly)           actions.push('Investigate anomalous signals — run targeted trace for root cause confirmation.');
   if (hasCriticalRootCause) actions.push('Remediate identified root cause — coordinate with owning service team.');
-  if (hasViolation)       actions.push('Resolve governance violations before proceeding — escalate to compliance team.');
+  if (hasViolation)         actions.push('Resolve governance violations before proceeding — escalate to compliance team.');
+  // Domain-specific actions
+  const signalResp = responses.find(r => r.agentId === 'recSignalAgent' && r.status === 'success');
+  if (signalResp?.payload.domain === 'delayed_recon') {
+    actions.push('Investigate delayed recon jobs — check upstream job completion and data feed latency.');
+  }
+  if (signalResp?.payload.domain === 'high_mtp') {
+    const breachedNames = ((signalResp.payload.accounts ?? []) as { name: string; mtp: number }[])
+      .filter(a => a.mtp > 180).map(a => a.name);
+    if (breachedNames.length > 0) {
+      actions.push(`Escalate high-MTP accounts for review: ${breachedNames.join(', ')}.`);
+    }
+  }
+  if (serverResp?.payload.domain === 'server_diagnosis') {
+    const warns = (serverResp.payload.warnings as string[]) ?? [];
+    if (warns.length > 0) actions.push(`Server resource alerts require attention: ${warns.join('; ')}.`);
+    actions.push('Review upstream job dependencies — consider re-scheduling delayed jobs.');
+  }
   if (actions.length === 0) actions.push('No immediate action required. Continue standard monitoring.');
 
   return {
@@ -130,6 +222,7 @@ function buildReportData(
     keyFindings: findings,
     impactScope,
     recommendedActions: actions,
+    domainSection: domainSection ?? undefined,
   };
 }
 
@@ -178,7 +271,7 @@ export async function runControlCycle(
     const fn = AGENT_REGISTRY[agentId];
     if (!fn) continue;
 
-    const result = await fn(userInput);
+    const result = await fn(userInput, profile);
 
     callbacks?.onAgentStart?.(result.displayName);
     await delay(800);

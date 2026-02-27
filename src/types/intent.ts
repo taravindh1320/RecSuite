@@ -8,11 +8,28 @@ export type IntentType =
   | 'compliance_check'
   | 'performance_analysis'
   | 'incident_response'
-  | 'full_analysis';
+  | 'full_analysis'
+  | 'delayed_recon_query'
+  | 'high_mtp_query'
+  | 'server_diagnosis';
 
 export type SeverityLevel = 'low' | 'medium' | 'high' | 'critical';
 
-export type AgentId = 'recSignalAgent' | 'recTraceAgent' | 'recCheckAgent';
+export type AgentId =
+  | 'recSignalAgent'
+  | 'recTraceAgent'
+  | 'recCheckAgent'
+  | 'recServerAgent';
+
+/** Structured context extracted alongside the intent classification */
+export interface ExtractedContext {
+  /** Dominant use-case within the intent */
+  useCase?: 'delayed_recon' | 'high_mtp' | 'server_diagnosis';
+  /** Resolved recon instance identifier (INV / SNPB / FX / ICG) */
+  instanceId?: string;
+  /** Resolved server identifier (e.g. ICGRECON6P) */
+  serverId?: string;
+}
 
 export interface IntentProfile {
   type: IntentType;
@@ -23,4 +40,6 @@ export interface IntentProfile {
   primaryKeywords: string[];
   /** Business domain inferred from user input */
   domain: string;
+  /** Domain-specific context extracted from free text */
+  extractedContext?: ExtractedContext;
 }

@@ -203,3 +203,132 @@
 .actionList li {
   padding-left: 2px;
 }
+
+/* ── Domain Section styles ─────────────────────────────── */
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: rgba(96, 165, 250, 0.25);
+  color: #60a5fa;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 0 4px;
+}
+
+.instanceTag {
+  font-size: 9px;
+  color: rgba(148, 163, 184, 0.7);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.subLabel {
+  margin-top: 10px;
+  margin-bottom: 4px !important;
+}
+
+/* Recon chips */
+.reconList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.reconChip {
+  font-family: 'Courier New', monospace;
+  font-size: 9.5px;
+  padding: 2px 8px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 4px;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+}
+
+/* MTP table */
+.mtpTable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mtpRow {
+  display: grid;
+  grid-template-columns: 1fr 80px 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.mtpName {
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mtpValue {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: #94a3b8;
+}
+
+/* Progress bars */
+.barTrack {
+  height: 4px;
+  background: rgba(30, 41, 59, 0.9);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.barOk     { background: #22d3ee; }
+.barWarn   { background: #f59e0b; }
+.barDanger { background: #ef4444; }
+
+/* Server stat grid */
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.statValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: right;
+}
+
+/* Value color overrides */
+.valWarn   { color: #f59e0b !important; }
+.valDanger { color: #ef4444 !important; }
+
